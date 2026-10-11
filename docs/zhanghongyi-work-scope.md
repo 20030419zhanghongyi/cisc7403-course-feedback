@@ -1,0 +1,78 @@
+# Zhanghongyi 工作范围定义
+
+Zhanghongyi 负责同学 B 部分：统计功能与整体部署。目标是从 PostgreSQL 展示准确的反馈统计，并将三个服务整合为可以用 `docker compose up --build` 一键启动的系统。开发分支为 `zhanghongyi`，最终合并到 `main`。
+
+## 负责的工作
+
+| 工作项 | 交付要求 |
+|---|---|
+| 统计网页 | 只读展示反馈总数、平均难度以及四个主题各自的选择次数 |
+| 统计查询 | 直接从 PostgreSQL 查询；刷新浏览器即可更新；未被选择的主题也显示 0 |
+| 空数据处理 | 没有反馈时显示总数 0、各主题 0，平均难度显示“暂无数据”或等价提示 |
+| 统计容器 | 提供 Dockerfile、依赖清单及运行入口；从环境变量读取数据库配置 |
+| Compose 部署 | 定义 `feedback`、`dashboard`、`db` 三个服务，连接内部网络，配置环境变量、数据库初始化挂载和持久化数据卷 |
+| 启动协调 | 配置数据库健康检查及应用启动依赖；与 Hanyan 协作处理数据库未就绪时的连接问题 |
+| 运行说明 | 在仓库 README 中说明配置、启动、访问地址和查看日志的方法，提供 `.env.example`，将 `.env` 加入 `.gitignore` |
+| 报告材料 | 提供统计页面和容器运行截图，整理整体架构、Compose 部署、网络、实现困难与实际贡献 |
+
+## 文件归属与交接
+
+主要维护 `dashboard/`、`docker-compose.yml`、`.env.example`、`.gitignore` 和仓库启动说明。至少交付：
+
+- `dashboard/` 下的应用源码、页面、依赖清单和 `Dockerfile`。
+- 根目录 `docker-compose.yml`，使用官方 PostgreSQL 镜像；正常部署只对宿主机开放 6110 和 6111。
+- 配置示例及可复现的启动、查看日志说明。
+
+反馈页面、反馈提交、提交日志和建表脚本由 Hanyan 实现。Zhanghongyi 负责集成这些交付，并协调在课程虚拟机安装 Docker 和最终部署；最终联调由双方共同完成。
+
+## 共同接口约定
+
+以下是本组的初始实现约定，用来支持双方独立开发；具体命名不是老师强制要求。若需要修改，先与另一位同学协商，并同步更新这两份文档及相关代码。
+
+| 项目 | 约定 |
+|---|---|
+| Compose 服务名 | `feedback`、`dashboard`、`db` |
+| 数据库 | 官方 PostgreSQL 镜像；数据库名 `course_feedback`，用户 `course_app` |
+| 应用连接配置 | 两个应用读取 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASSWORD`；由 Compose 注入 |
+| 容器内数据库地址 | `DB_HOST=db`，`DB_PORT=5432`；不能用 `localhost` |
+| 数据表 | `public.feedback` |
+| 字段 | `id SERIAL PRIMARY KEY`、`difficulty INTEGER NOT NULL`、`topic VARCHAR(32) NOT NULL` |
+| 数据约束 | `difficulty` 为 1–5；`topic` 仅允许下面四个字符串；数据库约束与应用校验保持一致 |
+| 主题字符串 | `Virtual Machine`、`Docker`、`Kubernetes`、`Serverless`，大小写和空格一致 |
+| 反馈页面 | `/`；应用监听 `0.0.0.0:6110`，宿主机映射 `6110:6110` |
+| 统计页面 | `/`；应用监听 `0.0.0.0:6111`，宿主机映射 `6111:6111` |
+| 数据访问 | 两个应用直接连接 PostgreSQL；统计服务只查询反馈数据，不依赖反馈服务提供接口 |
+| 数据库初始化 | Hanyan 提供 `database/init.sql`；Zhanghongyi 在 Compose 中挂载到 `/docker-entrypoint-initdb.d/` |
+| 本地配置 | Zhanghongyi 提供 `.env.example` 和启动说明；实际密码放本地 `.env`，不提交到 Git |
+
+数据库初始化脚本只会在 PostgreSQL 数据目录首次初始化时自动执行。已有数据卷上的表结构变更需要双方另行协调，不能默认重新启动就会执行新脚本。
+
+## 完成验收标准
+
+- [ ] 准备本地配置后，可在课程虚拟机用 `docker compose up --build` 构建并启动三个容器。
+- [ ] 浏览器访问宿主机 6111 端口，可看到总数、平均难度和全部四个主题计数。
+- [ ] 空数据库时页面正常显示；新增反馈后刷新页面，统计随数据库变化。
+- [ ] 在独立测试数据中依次录入 `(1, Docker)`、`(3, Docker)`、`(5, Kubernetes)`，总数为 3，平均难度为 3，Docker 为 2、Kubernetes 为 1，另两个主题为 0。
+- [ ] 两个应用通过 `db:5432` 连接 PostgreSQL，宿主机默认不暴露数据库端口。
+- [ ] 首次部署正确挂载 Hanyan 的初始化脚本；普通重启保留已有反馈数据。
+- [ ] 可通过 `docker compose ps` 查看运行状态，并通过 `docker compose logs feedback` 查看成功提交日志。
+- [ ] 统计页面只读，数据库查询错误时不把失败显示为真实的零条反馈。
+- [ ] 启动说明、配置示例、负责部分的报告文字和截图完整。
+
+验证统计时使用独立测试数据，避免清空已有反馈；新增的边界处理和持久化措施属于本组实现约定。
+
+## 协作与共同交付
+
+1. 开始开发前，将 `main` 的最新内容合并到各自开发分支，获取本文件和 `course-materials` 中的老师原始资料。
+2. 在自己的分支提交负责的代码；涉及对方负责的文件或共同接口时，先同步变更。
+3. 完成后向 `main` 发起 Pull Request，由另一位同学检查，再合并。合并冲突由双方一起处理。
+4. 双方在课程虚拟机上完成最终联调，核对两个页面、数据库、三个容器和提交日志，并共同整理报告。
+5. 报告正文最多 3 页，封面和源代码不计入；应覆盖架构、容器部署、运行截图、挑战及成员贡献。
+6. 提交完整源代码、两个 Dockerfile 和 `docker-compose.yml`。每个人单独填写、签署并提交角色声明表。
+
+前端简单 HTML 即可；图表、认证、自动刷新和其他额外功能均不属于本次必做范围。成员贡献应按实际完成情况填写。
+
+## 老师原始资料
+
+- [作业说明 PDF](../course-materials/Project1_Course_Feedback_Microservices.pdf)
+- [个人角色声明表](../course-materials/CISC7403Role%20Declaration%20Page.docx)
