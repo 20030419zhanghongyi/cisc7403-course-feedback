@@ -25,25 +25,7 @@ Hanyan 负责同学 A 部分：反馈功能与数据库。目标是让学生可�
 
 ## 共同接口约定
 
-以下是本组的初始实现约定，用来支持双方独立开发；具体命名不是老师强制要求。若需要修改，先与另一位同学协商，并同步更新这两份文档及相关代码。
-
-| 项目 | 约定 |
-|---|---|
-| Compose 服务名 | `feedback`、`dashboard`、`db` |
-| 数据库 | 官方 PostgreSQL 镜像；数据库名 `course_feedback`，用户 `course_app` |
-| 应用连接配置 | 两个应用读取 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USER`、`DB_PASSWORD`；由 Compose 注入 |
-| 容器内数据库地址 | `DB_HOST=db`，`DB_PORT=5432`；不能用 `localhost` |
-| 数据表 | `public.feedback` |
-| 字段 | `id SERIAL PRIMARY KEY`、`difficulty INTEGER NOT NULL`、`topic VARCHAR(32) NOT NULL` |
-| 数据约束 | `difficulty` 为 1–5；`topic` 仅允许下面四个字符串；数据库约束与应用校验保持一致 |
-| 主题字符串 | `Virtual Machine`、`Docker`、`Kubernetes`、`Serverless`，大小写和空格一致 |
-| 反馈页面 | `/`；应用监听 `0.0.0.0:6110`，宿主机映射 `6110:6110` |
-| 统计页面 | `/`；应用监听 `0.0.0.0:6111`，宿主机映射 `6111:6111` |
-| 数据访问 | 两个应用直接连接 PostgreSQL；统计服务只查询反馈数据，不依赖反馈服务提供接口 |
-| 数据库初始化 | Hanyan 提供 `database/init.sql`；Zhanghongyi 在 Compose 中挂载到 `/docker-entrypoint-initdb.d/` |
-| 本地配置 | Zhanghongyi 提供 `.env.example` 和启动说明；实际密码放本地 `.env`，不提交到 Git |
-
-数据库初始化脚本只会在 PostgreSQL 数据目录首次初始化时自动执行。已有数据卷上的表结构变更需要双方另行协调，不能默认重新启动就会执行新脚本。
+双方统一按 [双人开发接口与协作约定](team-agreement.md) 开发。数据库结构、环境变量、端口、统计口径、初始化与联调要求在该文件集中维护；变更前与另一位同学确认。
 
 ## 完成验收标准
 
