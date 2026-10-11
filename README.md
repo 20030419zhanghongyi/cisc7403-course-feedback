@@ -4,7 +4,7 @@
 
 ## 当前阶段
 
-`zhanghongyi` 分支已实现统计查询、只读网页、数据库连接模块和独立开发部署。当前尚未接入反馈服务或最终三服务 `docker-compose.yml`，不代表作业已完成联调或课程虚拟机验证。
+`zhanghongyi` 分支已实现统计查询、只读网页、数据库连接模块和独立开发部署，并提供完整三服务 `docker-compose.yml` 草案。草案仍缺 Hanyan 的反馈服务与正式建表脚本，不能视为已完成联调或课程虚拟机验证。接入步骤及独立从零复现方法见 [三服务部署与交接说明](docs/deployment-guide.md)。
 
 `compose.dev.yml` 用于统计服务独立开发，不需要 Hanyan 的代码。临时表结构在 `dev/init/01-schema.sql`；联调时改为挂载她提供的 `database/init.sql`。正式初始化不会加入测试数据。
 
@@ -83,3 +83,8 @@ docker compose -f compose.dev.yml up -d --wait db dashboard
 - `dev/checks/check_database.py`：从真实 PostgreSQL 读取反馈并报告连接结果。
 
 下一步接入 Hanyan 的正式建表脚本和反馈服务，完成整体配置与联调。完整系统最终仍需在课程虚拟机通过 `docker compose up --build` 验证。
+
+## 部署准备与验证记录
+
+- [三服务部署与交接说明](docs/deployment-guide.md)：完整配置草案、待交接文件、运行方法和独立复现步骤。
+- [独立环境复现检查记录](docs/reproduction-check.md)：已通过的检查以及尚待联调、课程虚拟机验证的范围。

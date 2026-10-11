@@ -1,0 +1,65 @@
+# Integration draft: requires Hanyan's feedback/ and database/init.sql.
+name: cisc7403-course-feedback
+
+x-app-environment: &app-environment
+  DB_HOST: db
+  DB_PORT: "5432"
+  DB_NAME: ${DB_NAME:?Set DB_NAME in .env}
+  DB_USER: ${DB_USER:?Set DB_USER in .env}
+  DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+
+services:
+  db:
+    image: postgres:17.6-bookworm
+    environment:
+      POSTGRES_DB: ${DB_NAME:?Set DB_NAME in .env}
+      POSTGRES_USER: ${DB_USER:?Set DB_USER in .env}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    volumes:
+      - feedback_data:/var/lib/postgresql/data
+      - type: bind
+        source: ./database/init.sql
+        target: /docker-entrypoint-initdb.d/01-init.sql
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+    restart: unless-stopped
+
+  feedback:
+    build:
+      context: ./feedback
+      dockerfile: Dockerfile
+    environment: *app-environment
+    ports:
+      - "6110:6110"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile
+    environment: *app-environment
+    ports:
+      - "6111:6111"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6111/', timeout=6).close()"]
+      interval: 10s
+      timeout: 8s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+volumes:
+  feedback_data:

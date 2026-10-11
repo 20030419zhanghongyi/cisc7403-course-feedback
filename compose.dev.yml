@@ -22,7 +22,7 @@ services:
     build:
       context: ./dashboard
     ports:
-      - "6111:6111"
+      - "${DASHBOARD_PORT:-6111}:6111"
     environment:
       DB_HOST: ${DB_HOST:?Set DB_HOST in .env}
       DB_PORT: ${DB_PORT:?Set DB_PORT in .env}
