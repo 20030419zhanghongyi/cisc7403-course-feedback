@@ -1,4 +1,4 @@
-# Phase 1 only: isolated PostgreSQL plus an on-demand connection checker.
+# Independent dashboard development: PostgreSQL, dashboard and connection checker.
 name: cisc7403-zhanghongyi-dev
 
 services:
@@ -17,6 +17,21 @@ services:
       timeout: 3s
       retries: 30
       start_period: 10s
+
+  dashboard:
+    build:
+      context: ./dashboard
+    ports:
+      - "6111:6111"
+    environment:
+      DB_HOST: ${DB_HOST:?Set DB_HOST in .env}
+      DB_PORT: ${DB_PORT:?Set DB_PORT in .env}
+      DB_NAME: ${DB_NAME:?Set DB_NAME in .env}
+      DB_USER: ${DB_USER:?Set DB_USER in .env}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+    depends_on:
+      db:
+        condition: service_healthy
 
   db-check:
     profiles: ["tools"]
