@@ -54,6 +54,10 @@ Zhanghongyi 负责同学 B 部分：统计功能与整体部署。目标是从 P
 
 前端简单 HTML 即可；图表、认证、自动刷新和其他额外功能均不属于本次必做范围。成员贡献应按实际完成情况填写。
 
+## 后续验收记录
+
+合并后的部署和报告截图见 [2026-10-23 虚拟机部署与验收记录](vm-deployment-verification.md)。该记录注明实际验证的合并版本、已完成的 VM 检查及尚待提交的报告材料。
+
 ## 老师原始资料
 
 - [作业说明 PDF](../course-materials/Project1_Course_Feedback_Microservices.pdf)
