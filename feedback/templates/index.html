@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Course Feedback</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <main class="container">
+        <header class="page-header">
+            <p class="eyebrow">COURSE EVALUATION</p>
+            <h1>Course Feedback</h1>
+            <p class="subtitle">
+                Help us understand your learning experience.
+            </p>
+        </header>
+
+        {% if success %}
+            <div class="message success" role="status">
+                Feedback submitted successfully!
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <div class="message error" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form action="/" method="POST">
+            <section class="form-section">
+                <label class="section-title">
+                    01. Course Difficulty
+                </label>
+
+                <p class="help-text">
+                    How difficult did you find this course?
+                </p>
+
+                <div class="rating-grid">
+                    {% for value in range(1, 6) %}
+                        <label class="rating-item">
+                            <input
+                                type="radio"
+                                name="difficulty"
+                                value="{{ value }}"
+                                required
+                            >
+                            <span>{{ value }}</span>
+                        </label>
+                    {% endfor %}
+                </div>
+
+                <div class="scale-labels">
+                    <span>Very Easy</span>
+                    <span>Very Difficult</span>
+                </div>
+            </section>
+
+            <section class="form-section">
+                <label for="topic" class="section-title">
+                    02. Favourite Topic
+                </label>
+
+                <p class="help-text">
+                    Which topic did you enjoy the most?
+                </p>
+
+                <select id="topic" name="topic" required>
+                    <option value="" disabled selected>
+                        Select a course topic
+                    </option>
+                    <option value="Virtual Machine">
+                        Virtual Machine
+                    </option>
+                    <option value="Docker">
+                        Docker
+                    </option>
+                    <option value="Kubernetes">
+                        Kubernetes
+                    </option>
+                    <option value="Serverless">
+                        Serverless
+                    </option>
+                </select>
+            </section>
+
+            <button type="submit">
+                Submit Feedback <span aria-hidden="true">→</span>
+            </button>
+
+            <p class="footer-note">
+                Your feedback will be recorded for course evaluation.
+            </p>
+        </form>
+    </main>
+</body>
+</html>

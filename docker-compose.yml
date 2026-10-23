@@ -1,4 +1,4 @@
-# Integration draft: requires Hanyan's feedback/ and database/init.sql.
+# Full deployment: feedback, dashboard and PostgreSQL.
 name: cisc7403-course-feedback
 
 x-app-environment: &app-environment
