@@ -16,4 +16,3 @@ COPY static/ ./static/
 EXPOSE 6110
 
 CMD ["python", "app.py"]
-

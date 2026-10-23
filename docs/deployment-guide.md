@@ -1,8 +1,8 @@
-# 三服务部署与交接说明
+# 三服务部署说明
 
-根目录 `docker-compose.yml` 是完整部署配置草案。它遵守共同约定，包含反馈、统计和 PostgreSQL 三个服务，但完整构建和联调必须等待 Hanyan 的正式代码。`compose.dev.yml` 继续用于当前统计服务独立开发。
+根目录 `docker-compose.yml` 是完整部署配置，包含反馈、统计和 PostgreSQL 三个服务，使用 Hanyan 的正式反馈代码及 `database/init.sql`。`compose.dev.yml` 仅用于统计服务独立开发。
 
-## 接入前需要的文件
+## 部署文件
 
 | 文件 | 负责人 | 接入要求 |
 |---|---|---|
@@ -11,11 +11,11 @@
 | `dashboard/Dockerfile` 及源码、依赖 | Zhanghongyi | 已实现，监听 `0.0.0.0:6111` |
 | `.env` | 部署者 | 从 `.env.example` 复制并替换本地密码，不提交 Git |
 
-Hanyan 的文件到位前，可以运行 `docker compose -f docker-compose.yml config --quiet` 检查语法，但这不证明缺失的文件存在，也不证明系统能够运行。执行 `sh scripts/check-integration.sh` 会列出缺失文件，阻止把草案误认为已可联调。不要创建空的反馈服务或用测试脚本冒充她的正式交付。
+执行 `sh scripts/check-integration.sh` 检查必要文件和 Compose 语法。该检查不代替构建和运行测试；完整自动验收使用 `python3 scripts/test-full-stack.py`。
 
 ## 完整系统部署
 
-在代码到齐后，在课程虚拟机准备 Docker Engine 和 Compose 插件；本地也可以用 Docker Desktop。首次构建需要访问官方镜像和依赖仓库。
+在课程虚拟机准备 Docker Engine 和 Compose 插件；本地也可以用 Docker Desktop。首次构建需要访问官方镜像和依赖仓库。
 
 1. 同步整合后的代码，复制 `.env.example` 为 `.env`，填写密码。
 2. 执行 `sh scripts/check-integration.sh` 检查文件和配置。
@@ -28,7 +28,7 @@ docker compose up --build
 
 打开 `http://虚拟机地址:6110` 和 `http://虚拟机地址:6111`。只有 6110、6111 映射到宿主机；PostgreSQL 仅在内部网络使用 5432。两个应用的 `DB_HOST=db`、`DB_PORT=5432` 在完整配置中固定，以避免把本地调试地址带入容器。
 
-数据库将 `.env` 的数据库名、用户名和密码映射到 `POSTGRES_*`。初始化脚本只读挂载，缺失时不会被自动创建成目录。数据库健康检查通过后启动应用；统计服务的健康检查访问真实页面，因此数据库查询失败也会使统计服务不健康。反馈服务的完整可用性必须通过实际提交验证，目前未擅自假定它有额外健康检查路由。
+数据库将 `.env` 的数据库名、用户名和密码映射到 `POSTGRES_*`。初始化脚本只读挂载，缺失时不会被自动创建成目录。数据库健康检查通过后启动应用；统计服务的健康检查访问真实页面，因此数据库查询失败也会使统计服务不健康。反馈服务通过实际提交验证可用性，提交入口是 `POST /`。
 
 完整系统使用 `cisc7403-course-feedback` 项目及自己的 `feedback_data` 数据卷；开发环境使用另一个项目和数据卷。两者不共享反馈，切换后不会自动带入开发测试数据。
 
@@ -45,6 +45,8 @@ docker compose down
 
 ## 联调验收
 
+本地自动测试结果见 [整合审查记录](integration-review.md)。以下清单留给课程虚拟机现场验收：
+
 - [ ] 在空数据卷上创建正式表，初始记录数为零。
 - [ ] 6110 页面提交反馈成功，日志记录难度与主题。
 - [ ] 6111 页面刷新后总数、平均难度和四主题计数准确。
@@ -53,7 +55,9 @@ docker compose down
 
 ## 独立从零复现的方法
 
-从一个新克隆的 `zhanghongyi` 工作目录开始，不复制原目录的 `.env` 或数据卷。准备新的 `.env` 密码；若旧页面占用 6111，可将 `DASHBOARD_PORT` 改为另一个空闲端口，例如 16111。此变量仅影响开发配置，完整配置仍固定 6111。
+完整系统可从 `main` 执行 `python3 scripts/test-full-stack.py`，它自动创建隔离环境并清理自身的测试资源。以下步骤只复现统计服务的独立开发环境。
+
+从一个新克隆的 `main` 工作目录开始，不复制原目录的 `.env` 或数据卷。准备新的 `.env` 密码；若旧页面占用 6111，可将 `DASHBOARD_PORT` 改为另一个空闲端口，例如 16111。此变量仅影响开发配置，完整配置仍固定 6111。
 
 每次检查选择新的项目名称。下面的 `cisc7403-repro-example` 必须尚未使用，后续命令保持同一名称：
 

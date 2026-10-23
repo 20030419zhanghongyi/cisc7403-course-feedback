@@ -1,5 +1,5 @@
 #!/bin/sh
-# Run from any directory; read-only preflight for the full three-service draft.
+# Run from any directory; read-only preflight for the three-service deployment.
 set -eu
 cd "$(dirname "$0")/.."
 missing=0

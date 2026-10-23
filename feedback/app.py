@@ -20,7 +20,7 @@ VALID_TOPICS = {
 
 
 def get_db_connection():
-    """Connect to MySQL using environment variables."""
+    """Connect to PostgreSQL using environment variables."""
 
     required_vars = [
         "DB_HOST",
@@ -139,4 +139,3 @@ def feedback():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=6110)
-

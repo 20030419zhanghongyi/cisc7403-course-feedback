@@ -4,17 +4,17 @@
 
 ## 当前阶段
 
-`zhanghongyi` 分支已实现统计查询、只读网页、数据库连接模块和独立开发部署，并提供完整三服务 `docker-compose.yml` 草案。草案仍缺 Hanyan 的反馈服务与正式建表脚本，不能视为已完成联调或课程虚拟机验证。接入步骤及独立从零复现方法见 [三服务部署与交接说明](docs/deployment-guide.md)。
+反馈服务、统计服务和正式数据库脚本已整合到完整三服务 `docker-compose.yml`。反馈提交后写入 PostgreSQL 并输出成功日志；统计页直接查询数据库，展示总数、平均难度和四个主题计数。部署方法见 [三服务部署说明](docs/deployment-guide.md)。课程虚拟机部署、最终报告和个人角色声明仍需完成。
 
-`compose.dev.yml` 用于统计服务独立开发，不需要 Hanyan 的代码。临时表结构在 `dev/init/01-schema.sql`；联调时改为挂载她提供的 `database/init.sql`。正式初始化不会加入测试数据。
+`compose.dev.yml` 仅用于统计服务独立开发，临时表结构在 `dev/init/01-schema.sql`；完整系统使用 `database/init.sql`。正式初始化不会加入测试数据。
 
 ## 复现环境
 
 需要 Git、可运行 Linux 容器的 Docker 环境和 Docker Compose。Mac 或 Windows 可以用 Docker Desktop，Linux 可以安装 Docker Engine 与 Compose 插件，不要求 Docker Desktop。项目不依赖开发者电脑上的 Python、pip 或 PostgreSQL。
 
-首次运行需能访问镜像仓库和 Python 包仓库。应用依赖版本记录在 `dashboard/requirements.txt`，数据库镜像版本记录在 Compose 配置。镜像标签不是不可变摘要，当前配置不承诺逐字节相同构建；后续可固定镜像摘要。跨设备无需复制本机虚拟环境。
+首次运行需能访问镜像仓库和 Python 包仓库。应用直接依赖版本记录在 `feedback/requirements.txt` 和 `dashboard/requirements.txt`，数据库镜像版本记录在 Compose 配置。镜像标签和间接依赖仍可能变化，当前配置不承诺逐字节相同构建。跨设备无需复制本机虚拟环境。
 
-从 GitHub 克隆仓库并切换到 `zhanghongyi` 分支后，在仓库根目录执行下列步骤。Windows 可在 Git Bash 或 WSL 中执行这些命令。
+从 GitHub 克隆仓库并使用 `main` 分支，在仓库根目录执行下列步骤。Windows 可在 Git Bash 或 WSL 中执行这些命令。
 
 ### 准备本地配置
 
@@ -22,7 +22,39 @@
 cp .env.example .env
 ```
 
-将 `.env` 中的 `DB_PASSWORD` 改为自己的本地密码，其余值保持示例约定。`.env` 不提交到仓库。Compose 将 `DB_NAME`、`DB_USER`、`DB_PASSWORD` 映射到数据库容器的 `POSTGRES_*` 变量，将五个 `DB_*` 变量注入检查容器。
+将 `.env` 中的 `DB_PASSWORD` 改为自己的本地密码，其余值保持示例约定。`.env` 不提交到仓库。Compose 将 `DB_NAME`、`DB_USER`、`DB_PASSWORD` 映射到数据库容器的 `POSTGRES_*` 变量，将五个 `DB_*` 变量注入两个应用。统计服务会拒绝示例占位密码，因此必须替换它。
+
+### 启动完整系统
+
+```bash
+sh scripts/check-integration.sh
+docker compose up --build
+```
+
+访问 [反馈页面](http://localhost:6110) 和 [统计页面](http://localhost:6111)。在课程虚拟机部署时，将 `localhost` 换成虚拟机地址。反馈表单每次有效提交写入一条记录并显示成功提示；刷新统计页面即可查看新结果。
+
+另开终端查看状态和日志：
+
+```bash
+docker compose ps
+docker compose logs feedback
+```
+
+仅 6110、6111 映射到宿主机。两个应用通过 `db:5432` 连接官方 PostgreSQL 容器，数据库不开放宿主机端口。普通 `docker compose down` 保留反馈数据；再次执行启动命令即可恢复。
+
+### 完整系统自动验收
+
+本机需额外有 Python 3，并确保 6110、6111 未被其他程序占用：
+
+```bash
+python3 scripts/test-full-stack.py
+```
+
+脚本创建随机命名的独立 Compose 项目、临时密码和新数据卷，验证真实 HTTP 提交、统计、非法输入、数据库约束、日志、只读连接、断库恢复、容器重建后的持久化，以及原有四项统计测试。结束时只删除脚本自身创建的容器、网络和测试数据卷，不读取本地 `.env` 的密码，也不操作既有项目。它使用正式三服务配置及端口，因此运行前应停止占用端口的开发实例。
+
+## 统计服务独立开发（可选）
+
+以下命令使用 `compose.dev.yml` 的独立数据库，不启动反馈服务。若完整系统占用 6111，先停止完整系统，或在 `.env` 中设置开发用 `DASHBOARD_PORT=16111` 并访问对应端口。
 
 ### 启动数据库并验证空表
 
@@ -82,9 +114,10 @@ docker compose -f compose.dev.yml up -d --wait db dashboard
 - `dev/sample-feedback.sql`：手动加载的测试记录。
 - `dev/checks/check_database.py`：从真实 PostgreSQL 读取反馈并报告连接结果。
 
-下一步接入 Hanyan 的正式建表脚本和反馈服务，完成整体配置与联调。完整系统最终仍需在课程虚拟机通过 `docker compose up --build` 验证。
+完整系统最终仍需在课程虚拟机通过 `docker compose up --build` 验证，并收集报告要求的页面、运行容器和日志截图。
 
 ## 部署准备与验证记录
 
-- [三服务部署与交接说明](docs/deployment-guide.md)：完整配置草案、待交接文件、运行方法和独立复现步骤。
+- [三服务部署说明](docs/deployment-guide.md)：正式三服务配置、运行方法和验收步骤。
+- [整合审查与验收记录](docs/integration-review.md)：PR 冲突处理、完整系统测试结果及验证边界。
 - [独立环境复现检查记录](docs/reproduction-check.md)：已通过的检查以及尚待联调、课程虚拟机验证的范围。
